@@ -9,7 +9,11 @@
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs { inherit system; };
-      OUTFILE = ".time_tacker.csv";
+      OUTFILE = ".time_tracker.csv";
+      myRPackages = with pkgs.rPackages; [
+        tidyverse
+      ];
+      myR = pkgs.rWrapper.override { packages = myRPackages; };
     in
     {
       packages.${system} = rec {
@@ -30,6 +34,15 @@
               echo "Oops wrong args $1"
           fi
         '';
+        plot = pkgs.writeScriptBin "show" ''
+          ${myR}/bin/Rscript ${./script.R} ${OUTFILE}
+        '';
+      };
+      
+      devShells.${system} = {
+        r-shell = pkgs.mkShell {
+          buildInputs = [ myR ];
+        };
       };
     };
 }
